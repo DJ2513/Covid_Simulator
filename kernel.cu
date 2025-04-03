@@ -12,7 +12,8 @@ const int MAX_DAYS = 30;
 const int MAX_MOVEMENTS_PER_DAY = 10;
 const float SIM_AREA_WIDTH = 500.0f;    
 const float SIM_AREA_HEIGHT = 500.0f;   
-const float MAX_LOCAL_MOVEMENT = 5.0f;
+const float MAX_SHORT_MOVEMENT = 5.0f;
+const float MAX_LONG_MOVEMENT = 20.0f;
 const float CONTAGION_DISTANCE = 1.0f;  
 
 struct Agent {
@@ -30,7 +31,7 @@ struct Agent {
     int daysInQuarantine;        
 };
 
-float randFloat(float min, float max) {
+float randFloat(float min, float max, mt19937& gen) {
     uniform_real_distribution<float> dist(min, max);
     return dist(gen);
 }
@@ -56,32 +57,78 @@ __host__ void initializeAgents(Agent* agents) {
 
 // Rule 1: Contagion
 // If an uninfected agent is near an infected neighbor, it may become infected.
+__device__ void Rule1() {
+
+}
+
+__host__ void Rule1() {
+
+}
 
 
 // Rule 2: Mobility
 // Agent moves either locally or long range based on probabilities.
+__device__ void Rule2() {
+
+}
+
+__host__ void Rule2() {
+
+}
 
 
 // Rule 3: External Contagion
 // An uninfected agent may become infected from outside the simulation.
+__device__ void Rule3() {
+
+}
+
+__host__ void Rule3() {
+
+}
 
 
 // Rule 4: Incubation, Quarantine, and Recovery
 // Update incubation days and transition to quarantine or recovery as needed.
+__device__ void Rule4() {
+
+}
+
+__host__ void Rule4() {
+
+}
 
 
 // Rule 5: Fatal Cases
-// In quarantine, an agent may die based on mortality probability.
+// In quarantine an agent may die based on mortality probability.
+__device__ void Rule5() {
 
+}
+
+__host__ void Rule5() {
+
+}
 
 // Sequential Simulation (CPU)
-// This __host__ method calls all rules according to the simulation procedure.
+// This method calls all rules according to the simulation procedure.
+__device__ void CPU_Simulation() {
+    
+}
 
-// --------------------------
-// Main Function
+__host__ void GPU_Simulation() {
+    
+}
+
 int main() {
     Agent* agents = new Agent[NUM_AGENTS];
     initializeAgents(agents);
     
+    // Simluacion para el CPU con tiempo
+
+    // Simulacion para el GPU con tiempo
+
+
+
+
     return 0;
 }

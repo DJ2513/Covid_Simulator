@@ -1,8 +1,24 @@
 ﻿  Compiling CUDA source file kernel.cu...
   
   C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.42.34433\bin\HostX64\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.6\include"  -G   --keep-dir x64\Debug  -maxrregcount=0   --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /FS /Zi /RTC1 /MDd " -Xcompiler "/Fdx64\Debug\vc143.pdb" -o C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\x64\Debug\kernel.cu.obj "C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu" 
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(11): warning #177-D: variable "MAX_DAYS" was declared but never referenced
+    const int MAX_DAYS = 30;
+              ^
+  
+  Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+  
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(12): warning #177-D: variable "MAX_MOVEMENTS_PER_DAY" was declared but never referenced
+    const int MAX_MOVEMENTS_PER_DAY = 10;
+              ^
+  
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(15): warning #177-D: variable "MAX_LOCAL_MOVEMENT" was declared but never referenced
+    const float MAX_LOCAL_MOVEMENT = 5.0f;
+                ^
+  
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(16): warning #177-D: variable "CONTAGION_DISTANCE" was declared but never referenced
+    const float CONTAGION_DISTANCE = 1.0f;  
+                ^
+  
   kernel.cu
-  tmpxft_00005aa4_00000000-7_kernel.cudafe1.cpp
-     Creating library C:\Univerisdad\8vo\Paralelo\Covid_Simulator\x64\Debug\Covid_Simulator.lib and object C:\Univerisdad\8vo\Paralelo\Covid_Simulator\x64\Debug\Covid_Simulator.exp
-LINK : warning LNK4098: defaultlib 'LIBCMT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  tmpxft_00002858_00000000-7_kernel.cudafe1.cpp
   Covid_Simulator.vcxproj -> C:\Univerisdad\8vo\Paralelo\Covid_Simulator\x64\Debug\Covid_Simulator.exe
