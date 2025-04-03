@@ -11,14 +11,18 @@ C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(12): warni
     const int MAX_MOVEMENTS_PER_DAY = 10;
               ^
   
-C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(15): warning #177-D: variable "MAX_LOCAL_MOVEMENT" was declared but never referenced
-    const float MAX_LOCAL_MOVEMENT = 5.0f;
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(15): warning #177-D: variable "MAX_SHORT_MOVEMENT" was declared but never referenced
+    const float MAX_SHORT_MOVEMENT = 5.0f;
                 ^
   
-C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(16): warning #177-D: variable "CONTAGION_DISTANCE" was declared but never referenced
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(16): warning #177-D: variable "MAX_LONG_MOVEMENT" was declared but never referenced
+    const float MAX_LONG_MOVEMENT = 20.0f;
+                ^
+  
+C:\Univerisdad\8vo\Paralelo\Covid_Simulator\Covid_Simulator\kernel.cu(17): warning #177-D: variable "CONTAGION_DISTANCE" was declared but never referenced
     const float CONTAGION_DISTANCE = 1.0f;  
                 ^
   
   kernel.cu
-  tmpxft_00002858_00000000-7_kernel.cudafe1.cpp
+  tmpxft_00005720_00000000-7_kernel.cudafe1.cpp
   Covid_Simulator.vcxproj -> C:\Univerisdad\8vo\Paralelo\Covid_Simulator\x64\Debug\Covid_Simulator.exe

@@ -57,55 +57,55 @@ __host__ void initializeAgents(Agent* agents) {
 
 // Rule 1: Contagion
 // If an uninfected agent is near an infected neighbor, it may become infected.
-__device__ void Rule1() {
+__device__ void CPU_Rule1() {
 
 }
 
-__host__ void Rule1() {
+__host__ void GPU_Rule1() {
 
 }
 
 
 // Rule 2: Mobility
 // Agent moves either locally or long range based on probabilities.
-__device__ void Rule2() {
+__device__ void CPU_Rule2() {
 
 }
 
-__host__ void Rule2() {
+__host__ void GPU_Rule2() {
 
 }
 
 
 // Rule 3: External Contagion
 // An uninfected agent may become infected from outside the simulation.
-__device__ void Rule3() {
+__device__ void CPU_Rule3() {
 
 }
 
-__host__ void Rule3() {
+__host__ void GPU_Rule3() {
 
 }
 
 
 // Rule 4: Incubation, Quarantine, and Recovery
 // Update incubation days and transition to quarantine or recovery as needed.
-__device__ void Rule4() {
+__device__ void CPU_Rule4() {
 
 }
 
-__host__ void Rule4() {
+__host__ void GPU_Rule4() {
 
 }
 
 
 // Rule 5: Fatal Cases
 // In quarantine an agent may die based on mortality probability.
-__device__ void Rule5() {
+__device__ void CPU_Rule5() {
 
 }
 
-__host__ void Rule5() {
+__host__ void GPU_Rule5() {
 
 }
 
@@ -120,14 +120,28 @@ __host__ void GPU_Simulation() {
 }
 
 int main() {
-    Agent* agents = new Agent[NUM_AGENTS];
-    initializeAgents(agents);
+    Agent* CPU_Agents = new Agent[NUM_AGENTS];
+    Agent* GPU_Agents = new Agent[NUM_AGENTS];
     
     // Simluacion para el CPU con tiempo
+    auto startCPU = chrono::high_resolution_clock::now();
+    initializeAgents(CPU_Agents);
+
+
+
+    auto endCPU = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsedCPU = endCPU - startCPU;
+    cout << "Sequential (CPU) simulation time: " << elapsedCPU.count() << " seconds" << endl;
 
     // Simulacion para el GPU con tiempo
-
-
+    auto start = chrono::high_resolution_clock::now();
+    initializeAgents(GPU_Agents);
+    
+    
+    
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+    cout << "Sequential (GPU) simulation time: " << elapsed.count() << " seconds" << endl;
 
 
     return 0;
