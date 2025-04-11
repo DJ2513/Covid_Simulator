@@ -58,7 +58,6 @@ __host__ void initializeAgents(Agent* agents) {
         agents[i].daysInfected = 0;
         agents[i].daysInQuarantine = 0;
         agents[i].maxMovmentPerDay = 10;
-
     }
 }
 
@@ -66,7 +65,7 @@ __device__ curandState globalStates[NUM_AGENTS];
 
 __global__ void setupStates() {
     int id = threadIdx.x + blockDim.x * blockIdx.x;
-    curand_init(clock(), id, 0, &globalStates[id]);
+    curand_init(1234ULL + id, id, 0, &globalStates[id]);
 }
 
 __device__ float gpuRandom() {
@@ -76,17 +75,15 @@ __device__ float gpuRandom() {
 
 // Rule 1: Contagion
 // If an uninfected agent is near an infected neighbor, it may become infected.
-__host__ void CPU_Rule1(Agent* agents, int num_agents, float contagiosDist) {
+__host__ void CPU_Rule1(Agent* agents, int num_agents, float contagiosDist, mt19937& gen) {
+
     for (int i = 0; i < num_agents; ++i) {
         for (int j = 0; j < num_agents; ++j) {
             if (i != j && agents[i].infectionStatus == 0 && agents[j].infectionStatus == 1) {
-                // Calculate distance
-                float dist = sqrt(pow(agents[i].posX - agents[j].posX, 2) + pow(agents[i].posY - agents[j].posY, 2));
-
-                if (dist <= contagiosDist) {
-                    float rand_val = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-
-                    if (rand_val <= agents[i].contagionProb) {
+                float distance = sqrt(pow(agents[i].posX - agents[j].posX, 2) + pow(agents[i].posY - agents[j].posY, 2));
+                if (distance <= contagiosDist) {
+                    float rand_prob = randFloat(0.0f, 1.0f, gen);
+                    if (rand_prob <= agents[i].contagionProb) {
                         agents[i].infectionStatus = 1;
                     }
                 }
@@ -98,35 +95,36 @@ __host__ void CPU_Rule1(Agent* agents, int num_agents, float contagiosDist) {
 
 __device__ void GPU_Rule1(Agent* agents, int num_agents, int contagiosDist) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < num_agents) {
+    if (i < num_agents && agents[i].infectionStatus == 0) {
+        bool inRisk = false;
         for (int j = 0; j < num_agents; ++j) {
-            if (i != j && agents[i].infectionStatus == 0 && agents[j].infectionStatus == 1) {
-                // Calculate distance
-                float dist = sqrt(pow(agents[i].posX - agents[j].posX, 2) + pow(agents[i].posY - agents[j].posY, 2));
-
-                if (dist <= contagiosDist) {
-                    float rand_val = 0.01;
-
-                    if (rand_val <= agents[i].contagionProb) {
-                        agents[i].infectionStatus = 1;
-                    }
+            if (i != j && agents[j].infectionStatus == 1) {
+                float distance = sqrt(pow(agents[i].posX - agents[j].posX, 2) +
+                    pow(agents[i].posY - agents[j].posY, 2));
+                if (distance <= contagiosDist) {
+                    inRisk = true;
+                    break;
                 }
+            }
+        }
+        if (inRisk) {
+            float rand_prob = gpuRandom();
+            if (rand_prob <= agents[i].contagionProb) {
+                agents[i].infectionStatus = 1;
+                agents[i].daysInfected = 0;
             }
         }
     }
 }
 
-
 // Rule 2: Mobility
 // Agent moves either locally or long range based on probabilities.
-__host__ void CPU_Rule2(Agent* agents, int num_agents) {
-    random_device rd;
-    mt19937 gen(rd());
-
+__host__ void CPU_Rule2(Agent* agents, int num_agents, mt19937& gen) {
+    int counter = 0;
     for (int i = 0; i < num_agents; ++i) {
         if (agents[i].maxMovmentPerDay == 0) return;
         // Determine if the agent moves
-        if (randFloat(0.0f, 1.0f, gen) <= agents[i].mobilityProb) {
+        else if (randFloat(0.0f, 1.0f, gen) <= agents[i].mobilityProb) {
             // Determine short or long move
             if (randFloat(0.0f, 1.0f, gen) <= agents[i].shortMoveProb) {
                 // Short move
@@ -145,43 +143,41 @@ __host__ void CPU_Rule2(Agent* agents, int num_agents) {
             agents[i].posX = fmax(0.0f, fmin(agents[i].posX, SIM_AREA_WIDTH));
             agents[i].posY = fmax(0.0f, fmin(agents[i].posY, SIM_AREA_HEIGHT));
             agents[i].maxMovmentPerDay--;
+            counter++;
         }
     }
 }
 
 __device__ void GPU_Rule2(Agent agent, int num_agents, float short_mov, float long_mov, float width, float height) {
-    float rand_val = 0.5f;
+    float rand_prob = gpuRandom();
     if (agent.maxMovmentPerDay == 0) return;
-    if (rand_val <= agent.mobilityProb) {
-        if (rand_val <= agent.shortMoveProb) {
+    else if (rand_prob <= agent.mobilityProb) {
+        if (rand_prob <= agent.shortMoveProb) {
             // Short move
-            float angle = rand_val;
-            float dist = short_mov * rand_val;
+            float angle = rand_prob;
+            float dist = short_mov * rand_prob;
             agent.posX += dist * cosf(angle);
             agent.posY += dist * sinf(angle);
         }
         else {
             // Long move
-            float angle = rand_val;
-            float dist = long_mov * rand_val;
+            float angle = rand_prob;
+            float dist = long_mov * rand_prob;
             agent.posX += dist * cosf(angle);
             agent.posY += dist * sinf(angle);
         }
-
         agent.posX = fmaxf(0.0f, fminf(agent.posX, width));
         agent.posY = fmaxf(0.0f, fminf(agent.posY, height));
         agent.maxMovmentPerDay--;
     }
-
 }
 
 // Rule 3: External Contagion
 // An uninfected agent may become infected from outside the simulation.
 __device__ void GPU_Rule3(Agent &agent) {
     if (agent.infectionStatus == 0) {
-        unsigned int seed = threadIdx.x + blockIdx.x + clock();
-        float prob = 0.01f;
-        if (prob < agent.externalContagionProb) {
+        float rand_prob = gpuRandom();
+        if (rand_prob < agent.externalContagionProb) {
             agent.infectionStatus = 1;
             agent.daysInfected = 0;
         }
@@ -237,9 +233,8 @@ __host__ void CPU_Rule4(Agent& agent) {
 // In quarantine an agent may die based on mortality probability.
 __device__ void GPU_Rule5(Agent &agent) {
     if (agent.infectionStatus == -1) {
-        unsigned int seed = threadIdx.x + blockIdx.x + clock();
-        float prob = 0.006;
-        if (prob < agent.mortalityProb) {
+        float rand_prob = gpuRandom();
+        if (rand_prob < agent.mortalityProb) {
             agent.infectionStatus = -2;
         }
     }
@@ -259,7 +254,6 @@ __global__ void GPU_Simulation(Agent *agents, int numAgents, float conDist, floa
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i >= numAgents) return;
     
-    // FALTAN REGLA 1 y 2 de implementar
     GPU_Rule1(agents, numAgents, conDist);
     GPU_Rule2(agents[i], numAgents, shortMov, longMov, width, height);
 
@@ -284,11 +278,9 @@ __host__ void CPU_Simulation(Agent* agents) {
     agents[0].daysInfected = 0;
 
     for (int day = 0; day < MAX_DAYS; ++day) {
-        
-        for (int mov = 0; mov < MAX_MOVEMENTS_PER_DAY; ++mov) {
-            CPU_Rule1(agents, NUM_AGENTS, CONTAGION_DISTANCE);
-            CPU_Rule2(agents, NUM_AGENTS);
-        }
+
+        CPU_Rule1(agents, NUM_AGENTS, CONTAGION_DISTANCE, gen);
+        CPU_Rule2(agents, NUM_AGENTS, gen);
 
         for (int i = 0; i < NUM_AGENTS; ++i) {
             if (agents[i].infectionStatus == -2) 
@@ -301,6 +293,7 @@ __host__ void CPU_Simulation(Agent* agents) {
         cumulativeRecovered = 0;
         cumulativeFatalities = 0;
         for (int i = 0; i < NUM_AGENTS; ++i) {
+            agents[i].maxMovmentPerDay = 10;
             if (agents[i].infectionStatus != 0)
                 cumulativeInfected++;
             if (agents[i].infectionStatus == 2)
@@ -308,7 +301,6 @@ __host__ void CPU_Simulation(Agent* agents) {
             if (agents[i].infectionStatus == -2)
                 cumulativeFatalities++;
         }
-
         int newInfected = cumulativeInfected - prevCumulativeInfected;
         int newRecovered = cumulativeRecovered - prevCumulativeRecovered;
         int newFatalities = cumulativeFatalities - prevCumulativeFatalities;
@@ -328,7 +320,7 @@ __host__ void CPU_Simulation(Agent* agents) {
             dayFirstRecovered = day + 1;
         if (dayHalfRecovered == -1 && cumulativeRecovered >= NUM_AGENTS * 0.5)
             dayHalfRecovered = day + 1;
-        if (dayAllRecovered == -1 && day == MAX_DAYS - 1) 
+        if (dayAllRecovered == -1 && day == MAX_DAYS - 1)
             dayAllRecovered = day + 1;
         //MUERTOS
         if (dayFirstFatal == -1 && cumulativeFatalities >= 1)
@@ -348,7 +340,6 @@ __host__ void CPU_Simulation(Agent* agents) {
         cout << "Nuevos casos fatales: " << newFatalities << endl;
         cout << "--------------------------------------------" << endl;
     }
-
     // Resultados generales
     cout << "\n====== Resumen de la Simulacion (CPU) ======" << endl;
     cout << "Dia del primer contagio: " << (dayFirstInfected == -1 ? 0 : dayFirstInfected) << endl;
@@ -384,8 +375,16 @@ int main() {
     cudaMalloc((void**)&d_agents, size);
     cudaMemcpy(d_agents, GPU_Agents, size, cudaMemcpyHostToDevice);
 
-    /*int threadsPerBlock = 256;
-    int blocks = (NUM_AGENTS + threadsPerBlock - 1) / threadsPerBlock;*/
+    int threadsPerBlock = 256;
+    int blocks = (NUM_AGENTS + threadsPerBlock - 1) / threadsPerBlock;
+    setupStates << <blocks, threadsPerBlock >> > ();
+    cudaDeviceSynchronize();
+
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) {
+        cout << "Error en setupStates: " << cudaGetErrorString(err) << endl;
+        return -1;
+    }
 
     // Simulacion para el GPU con tiempo
     cout << "--------------------------GPU----------------------------------\n";
@@ -457,6 +456,7 @@ int main() {
     }
     cudaMemcpy(GPU_Agents, d_agents, size, cudaMemcpyDeviceToHost);
 
+    // Resultados generales
     cout << "\n====== Resumen de la Simulacion (GPU) ======" << endl;
     cout << "Dia del primer contagio: " << (dayFirstInfected == -1 ? 0 : dayFirstInfected) << endl;
     cout << "Dia en que se alcanzo el 50% de contagiados: " << (day50PercentInfected == -1 ? 0 : day50PercentInfected) << endl;
